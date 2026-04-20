@@ -10,26 +10,10 @@ services:
           - /auth
         strip_path: true 
 
-  - name: io-service
-    url: http://io-service:8000
-    routes:
-      - name: io-route
-        paths:
-          - /data
-        strip_path: true
-
   - name: scraper-service
     url: http://scraper-service:8001
     routes:
       - name: scraper-route
         paths:
           - /scraper
-        strip_path: true
-
-  - name: db-util
-    url: http://db-util:8080
-    routes:
-      - name: adminer-route
-        paths:
-          - /db-admin
         strip_path: true
