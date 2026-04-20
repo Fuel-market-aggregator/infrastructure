@@ -29,8 +29,6 @@ services:
     networks:
       - app-tier
       - data-tier
-    ports:
-      - "8000:8000"
     depends_on:
       postgres-db:
         condition: service_healthy
@@ -43,8 +41,6 @@ services:
       IO_SERVICE_URL: http://io-service:8000 
     networks:
       - app-tier
-    ports:
-      - "8001:8001"
     depends_on:
       - io-service
 
@@ -60,8 +56,6 @@ services:
     networks:
       - app-tier
       - data-tier
-    ports:
-      - "8002:8002"
     depends_on:
       postgres-db:
         condition: service_healthy
@@ -71,10 +65,31 @@ services:
     restart: always
     networks:
       - data-tier
-    ports:
-      - "8080:8080"
     depends_on:
       - postgres-db
+
+  kong:
+    image: kong:latest
+    user: "root"
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /opt/kong/kong.yml
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_LISTEN: 0.0.0.0:8001, 0.0.0.0:8444 ssl
+    volumes:
+      - ./kong-config:/opt/kong
+    networks:
+      - app-tier
+    ports:
+      - "80:8000"   
+      - "8443:8443"
+    depends_on:
+      - auth-service
+      - io-service
+      - scraper-service
 
 volumes:
   pg_data:
