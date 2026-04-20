@@ -88,6 +88,7 @@ services:
     networks:
       - front-tier
       - app-tier
+      - logging-tier
     ports:
       - "80:8000"   
       - "8443:8443"
@@ -95,6 +96,31 @@ services:
       - auth-service
       - io-service
       - scraper-service
+
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./prometheus/config.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - logging-tier
+      - app-tier
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    networks:
+      - logging-tier
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    deploy:
+      placement:
+        constraints: [node.role == manager]
 
 volumes:
   pg_data:
@@ -107,3 +133,5 @@ networks:
   data-tier:
     driver: bridge
     #internal: true
+  logging-tier:
+    driver: bridge
