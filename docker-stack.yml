@@ -11,21 +11,37 @@ services:
       - data-tier
     volumes:
       - pg_data:/var/lib/postgresql/data
-    deploy:
-      placement:
-        constraints:
-          - node.role == worker
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U db_admin -d fuel_market_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    
+  io-service:
+    image: io-service-local
+    build: 
+      context: ../io-service
+    environment:
+      POSTGRES_USER: db_admin
+      POSTGRES_PASSWORD: db_password
+      POSTGRES_HOST: postgres-db
+      POSTGRES_DB: fuel_market_db
+    networks:
+      - app-tier
+      - data-tier
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres-db:
+        condition: service_healthy
 
 volumes:
   pg_data:
 
 networks:
   front-tier:
-    driver: overlay
-    attachable: true
+    driver: bridge 
   app-tier:
-    driver: overlay
-    attachable: true
+    driver: bridge
   data-tier:
-    driver: overlay
-    attachable: true
+    driver: bridge
