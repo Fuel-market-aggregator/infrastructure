@@ -3,6 +3,9 @@ version: "3.8"
 services:
   postgres-db:
     image: postgres:15-alpine
+    deploy:
+      placement:
+        constraints: [node.role == manager]
     environment:
       POSTGRES_USER: db_admin
       POSTGRES_PASSWORD: db_password 
@@ -18,9 +21,7 @@ services:
       retries: 5
     
   io-service:
-    image: io-service-local
-    build: 
-      context: ../io-service
+    image: ato22/fuel-io-service:latest
     environment:
       POSTGRES_USER: db_admin
       POSTGRES_PASSWORD: db_password
@@ -31,13 +32,10 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      postgres-db:
-        condition: service_healthy
+      - postgres-db
 
   scraper-service:
-    image: scraper-service-local
-    build:
-      context: ../scraper-service
+    image: ato22/fuel-scraper-service:latest
     environment:
       IO_SERVICE_URL: http://io-service:8000 
     networks:
@@ -47,9 +45,7 @@ services:
       - io-service
 
   auth-service:
-    image: auth-service-local
-    build:
-      context: ../auth-service
+    image: ato22/fuel-auth-service:latest
     environment:
       POSTGRES_USER: db_admin
       POSTGRES_PASSWORD: db_password
@@ -59,8 +55,7 @@ services:
       - app-tier
       - data-tier
     depends_on:
-      postgres-db:
-        condition: service_healthy
+      - postgres-db
 
   db-util:
     image: adminer
@@ -84,7 +79,10 @@ services:
       KONG_ADMIN_ERROR_LOG: /dev/stderr
       KONG_ADMIN_LISTEN: 0.0.0.0:8001, 0.0.0.0:8444 ssl
     volumes:
-      - ./kong-config:/opt/kong
+      - /stack/kong-config:/opt/kong
+    deploy:
+      placement:
+        constraints: [node.role == manager]
     networks:
       - front-tier
       - app-tier
@@ -127,11 +125,11 @@ volumes:
 
 networks:
   front-tier:
-    driver: bridge
+    driver: overlay
   app-tier:
-    driver: bridge
+    driver: overlay
   data-tier:
-    driver: bridge
+    driver: overlay
     #internal: true
   logging-tier:
-    driver: bridge
+    driver: overlay
